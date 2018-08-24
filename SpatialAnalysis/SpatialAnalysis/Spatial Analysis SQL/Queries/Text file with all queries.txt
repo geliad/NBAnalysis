@@ -1,0 +1,42 @@
+Create Table query:
+CREATE TABLE Locations(Name varchar(30), Coordinates geometry);
+
+INSERT INTO Locations VALUES
+('Jeff/Vermont' , 'POINT(-118.291421 34.025386)'),
+('Expo/Vermont' , 'POINT(-118.291422 34.018414)'),
+('Expo/Figueora', 'POINT(-118.282340 34.018447)'),
+('Jeff/Figueora', 'POINT(-118.280159 34.021885)'),
+('Home' , 'POINT(-118.277964 34.027441)'),
+('Leavey Lib' , 'POINT(-118.282982 34.021656)'),
+('Tommy Trojan' , 'POINT(-118.285447 34.020565)'),
+('RTH' , 'POINT(-118.289941 34.020331)'),
+('Lyon Gym', 'POINT(-118.287979 34.024598)');
+
+/*Using this query
+SELECT Name, ST_AsText(Coordinates) FROM Locations;
+I can see the table
+*/
+ 
+Three nearest Neigbhours query:
+SELECT DISTINCT l1.Name, l2.Name, ST_DISTANCE(l1.Coordinates,l2.Coordinates)
+FROM Locations AS l1, Locations AS l2  
+WHERE l1.Name = 'Home' 
+ORDER BY l1.Name, ST_Distance(l1.Coordinates,l2.Coordinates)
+LIMIT 4;
+
+/*I print out 3 columns, where the first and the second are the names
+of the locations that are being compared for the distance.
+I also included Home in the second column to make sure my query works
+correctly, that's why I use limit 4 instead of 3.
+*/
+
+Convex Hull query:
+SELECT ST_AsText(ST_ConvexHull(ST_Collect(Coordinates)))
+FROM Locations;
+
+*/
+Prints out the coordinates of the ConvexHull where the first and last coordinates are the same.
+*/
+
+
+
