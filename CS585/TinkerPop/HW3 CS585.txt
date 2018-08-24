@@ -1,0 +1,91 @@
+(1)
+graph = TinkerGraph.open()
+g= graph.traversal()
+CS101 = g.addV("CS101").property(T.id,1).property("name","CS101").next()
+CS201 = g.addV("CS201").property(T.id,2).property("name","CS201").next()
+CS220 = g.addV("CS220").property(T.id,3).property("name","CS220").next()
+CS334 = g.addV("CS334").property(T.id,4).property("name","CS334").next()
+CS400 = g.addV("CS400").property(T.id,5).property("name","CS400").next()
+CS420 = g.addV("CS420").property(T.id,6).property("name","CS420").next()
+CS526 = g.addV("CS526").property(T.id,7).property("name","CS526").next()
+CS681 = g.addV("CS681").property(T.id,8).property("name","CS681").next()
+g.addE("requires pre-req").from(CS201).to(CS101)
+g.addE("requires pre-req").from(CS220).to(CS201)
+g.addE("requires pre-req").from(CS420).to(CS220)
+g.addE("requires pre-req").from(CS334).to(CS201)
+g.addE("requires pre-req").from(CS400).to(CS334)
+g.addE("requires pre-req").from(CS526).to(CS400)
+g.addE("requires pre-req").from(CS681).to(CS334)
+g.addE("is a co-req of").from(CS526).to(CS400)
+g.addE("is a co-req of").from(CS420).to(CS220)
+
+If I type g it returns:
+==> graphtraversalsource[tinkergraph[vertices:8 edges:9], standard]
+
+The results of the queries in the following parts will be of v[1] for vertex CS101, v[2] for vertex CS201 etc.
+Here is the list of nodes of my graph, and what each one is.
+v[1] = CS101
+v[2] = CS201
+v[3] = CS220
+v[4] = CS334
+v[5] = CS400
+v[6] = CS420
+v[7] = CS526
+v[8] = CS681
+
+(2)
+Answer: g.V().as('a').out().as('b').groupCount().by(select('a','b')).unfold().filter(select(values).is(gt(1))).select(keys)
+
+groupCount() counts those groups where the group keys are the result of by().
+I select the nodes labeled as 'a' and 'b' on my graph.
+
+g.V().as('a').out().as('b').groupCount().by(select('a','b')).select(keys)
+This way it prints all the nodes that are connected with each other with an edge.
+If I want to find only the nodes that are connected with 2 nodes, then I will need to use .filter()
+I need to use filter() to print the nodes with more that 1 edge, otherwise my code will print out 2, which is the number of edges that the nodes have.
+I do this by using the filter.(select(values).is(gt(1))). This means it will select the vertices that their value(theire edges)
+are greater than 1, so it will only print out the doubly connected nodes. If I didnt use the .select(keys), then
+it would print me out how many edges connect each nodes. I used this to make sure my query is correct.
+unfold() is just to print them line by line instead of everything together on the same line(as shown in the example of the homework).
+
+(3)
+Answer: g.V(CS526).repeat(out('requires pre-req').emit()
+
+Here I want to find the ancestors(for us the prereqs)) of a given vertex (I used CS526).
+If I change the value in g.V(CS526) to g.V(CS420) then I can test for other nodes if the query works.
+.repeat() is used for looping over a traversal, so I start from a vertex, and I go to all the nodes that it is connected with.
+emit() is a step modulator for repeat().
+Since I want only the edges that are named 'requires pre-req', I include that in the parenthesis.
+If I didn't I get the same value, but I want to make sure that I go through the edges that say 'requires pre-req',
+insted of maybe going through the other possible edges, like 'is a co-req of'.
+I used emit() after the repeat() so the emission happens after the repeat traversal is excecuted.
+As a result, I don't have the CS525 node(in this example) in the path that I print.
+I used dedup() which is a filter step where seen objects are removed from the traversal,
+so CS526 in this case, is not shown in my path of traversal.
+
+//I could also use g.V(CS526).repeat(out().dedup()).emit()
+(4)
+Answer:g.V(CS101).repeat(__.in()).emit(__.not(inE())).path().count(local).tail(1)
+
+I want to find the max depth starting from a node, in this case CS101.
+If I change the value in g.V(CS101) to g.V(CS420) then I can test for other nodes if the query works.
+.tail() is like limit, it limits the results. It limits the results so I can the last 1 value.
+In this case the last value will always be the longest path, so I will get the value of the count of the last path,
+in other words, the value of the count of the longest path. As a result I don't have to use the .max() function at the end.
+The __.in() is for the nodes that have an edge that points to the node. For example CS101, has an incoming edge
+rather than an outgoing one.
+I get all the paths from CS101 to where it ends, so where there is no anymore incoming edge in.
+That's why I used emit(__.not(inE())). The last node in my path I want to it be a node 
+that has no remaining incoming edges. As a reuslt I get all the paths thatend to 
+a node without any other incoming edges
+To make sure my query works, I first printed out all the paths, so I used my query without the .tail(1)
+and I see all the paths that 'end' somewhere, as I explained before.
+When I use count(), then it prints me the number of paths it finds.
+When I use count(local), it prints me the values of each path, in other words the number of nodes it goes through.
+So to find the max depth, I want the maximum of this count(local), and I do this using .tail(1) as explained before.
+
+For the 'last' nodes(CS526 and CS420), the query doesn't print anything.
+This is because there is no incoming edge to the nodes, so no paths are recorded.
+If you simply remove the .count(local).tail(1) you can test that there are no paths.
+Also you can add at the end instead of .count(local).tail(1), add .count() so that it will
+return the number of paths found, which will be 0.
